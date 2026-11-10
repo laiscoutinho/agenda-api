@@ -75,11 +75,10 @@ Branch `ci/pipeline-inicial`, [PR #2](https://github.com/laiscoutinho/agenda-api
 
 Branch `feat/dominio-compromisso`, [PR #3](https://github.com/laiscoutinho/agenda-api/pull/3) (aberta).
 
-- ✅ Red, Green e Refactor (`5e680aa`: verificação de cancelado extraída e validações agrupadas, sem mudar teste)
+- ✅ Red, Green e Refactor (`f03a451`: verificação de cancelado extraída e validações agrupadas, sem mudar teste)
 - ✅ JaCoCo 0.8.16 com mínimo de 70%
 - ✅ Prova da suíte com alterações propositais
-- 🔄 Coautoria e refactor feitos localmente; **falta o force-push**, que só a Laís pode rodar:
-  `git push --force-with-lease=feat/dominio-compromisso:934db79 origin feat/dominio-compromisso`
+- ✅ Coautoria nos commits (Rosana nas decisões e implementações centrais, Claude nos commits repetitivos de pom, testes e links e nos de documentação)
 - ⬜ Preencher em `docs/ia.md`: "O que mudei ou rejeitei" dos prompts 4 a 6 e a checagem de testes tautológicos
 - ⬜ Revisão e merge pela Rosana
 

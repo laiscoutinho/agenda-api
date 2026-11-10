@@ -125,7 +125,7 @@ subir e testar com curl no /actuator/health.
 - **O que a IA devolveu:** Dockerfile em dois estágios, docker-compose.yml com `db` e `api`, `.env.example` com placeholders e `application.properties` lendo a conexão de variáveis de ambiente.
 - **O que mudei ou rejeitei, e por quê:** [PREENCHER]
 - **Verificação feita:** leitura linha a linha; tags `postgres:16`, `eclipse-temurin:21-jdk` e `eclipse-temurin:21-jre` conferidas no Docker Hub [CONFIRMAR]; `docker compose up --build` com o banco saudável e `curl http://localhost:8080/actuator/health` respondendo `UP`.
-- **Onde ficou:** `Dockerfile`, `docker-compose.yml`, `.env.example`, `.dockerignore` e `src/main/resources/application.properties`, commit 3ab1fae.
+- **Onde ficou:** `Dockerfile`, `docker-compose.yml`, `.env.example`, `.dockerignore` e `src/main/resources/application.properties`, commit 7dd835c.
 
 ### Prompt 2: workflow do GitHub Actions
 
@@ -210,7 +210,7 @@ frase por regra explicando o risco que ela evita.
 - **O que a IA devolveu:** `CompromissoTest` com 18 testes em AAA. API proposta: `Compromisso.criar(titulo, descricao, inicio, fim)`, `cancelar()`, getters e `getDescricao()` como `Optional<String>`; exceções `TituloObrigatorioExcecao`, `HorarioObrigatorioExcecao`, `FimNaoPosteriorAoInicioExcecao` e `CompromissoJaCanceladoExcecao`, todas filhas de `ExcecaoDeDominio`. Casos de borda além dos pedidos: título nulo, título só com tabulação e quebra de linha, início ou fim nulos, descrição ausente, fim 1 nanossegundo depois do início (fronteira do `<` contra `<=`), ids diferentes em dois compromissos e status mantido como `CANCELADO` após o segundo cancelamento rejeitado.
 - **O que mudei ou rejeitei, e por quê:** [PREENCHER]
 - **Verificação feita:** os testes não compilavam, e todos os erros eram `cannot find symbol` das classes do domínio que ainda não existiam (nenhum erro de digitação ou de import); valores esperados conferidos como literais; Checkstyle limpo.
-- **Onde ficou:** `src/test/java/com/agenda/agenda_api/dominio/CompromissoTest.java`, commit fa5d500.
+- **Onde ficou:** `src/test/java/com/agenda/agenda_api/dominio/CompromissoTest.java`, commit caee7c2.
 
 ### Prompt 5: entidade Compromisso e exceções de domínio (Green)
 
@@ -222,7 +222,7 @@ frase por regra explicando o risco que ela evita.
 - **O que a IA devolveu:** `Compromisso` com construtor privado e fábrica `criar`, que valida título (`null` ou em branco), horários nulos e fim posterior ao início com `isAfter`; `cancelar()` rejeita o segundo cancelamento. `StatusCompromisso`, a classe abstrata `ExcecaoDeDominio` (filha de `RuntimeException`) e as quatro exceções com a mensagem fixa. Nenhum teste foi apontado como errado e nenhum teste foi alterado.
 - **O que mudei ou rejeitei, e por quê:** [PREENCHER]
 - **Verificação feita:** 18 testes verdes; `grep -rE "springframework|jakarta"` no pacote `dominio` sem resultados; Checkstyle limpo; alteração proposital do código (ver seção 6).
-- **Onde ficou:** `src/main/java/com/agenda/agenda_api/dominio/`, commit f261bdd.
+- **Onde ficou:** `src/main/java/com/agenda/agenda_api/dominio/`, commit a9f797f.
 
 ### Prompt 6: cobertura mínima com JaCoCo
 
@@ -234,7 +234,7 @@ frase por regra explicando o risco que ela evita.
 - **O que a IA devolveu:** `jacoco-maven-plugin` 0.8.16 (a versão mais recente no Maven Central, de 26/10/2026) com `prepare-agent`, `report` e `check` na fase `verify`; regra `BUNDLE` com `LINE` e `BRANCH` em `COVEREDRATIO` mínimo de 0.70. Relatório em `target/site/jacoco/index.html`.
 - **O que mudei ou rejeitei, e por quê:** [PREENCHER]
 - **Verificação feita:** `./mvnw verify` com Postgres 16 local (mesmas variáveis do CI) passou com 95,7% de linhas (45/47) e 100% de branches (12/12); as 2 linhas sem cobertura são do `main` de `AgendaApiApplication`. Com o mínimo trocado para 0.99 de propósito, o build falhou em `cobertura-minima` ("Coverage checks have not been met"), e o valor voltou para 0.70.
-- **Onde ficou:** `pom.xml`, commit ca1500a.
+- **Onde ficou:** `pom.xml`, commit c3a4eae.
 
 ### Prompt 7: etapas restantes delegadas ao agente (refactor, persistência, casos de uso, API, observabilidade, desempenho e documentação)
 
@@ -244,12 +244,12 @@ frase por regra explicando o risco que ela evita.
 - **Objetivo:** fazer as etapas 3 (refactor) a 9 do [docs/etapas.md](etapas.md) sem precisar aprovar cada passo.
 - **Prompt:** texto exatamente como foi enviado em [docs/prompts/07-etapas-restantes.md](prompts/07-etapas-restantes.md). **Diferente dos prompts 1 a 6:** foi uma delegação ampla a um agente (Claude Code), que lê e escreve arquivos, roda comandos, testes e o Docker, faz commit, push e abre PRs. Não segue a estrutura Papel, Contexto, Tarefa, Restrições, Formato, nem a regra de uma mudança por prompt (seção 2). Por isso a revisão humana de cada PR é ainda mais importante aqui.
 - **O que a IA devolveu:** uma branch por etapa, empilhadas, com TDD onde havia regra nova (teste primeiro, depois a implementação):
-  - **Refactor** (`5e680aa`, na #3): `exigirQueNaoEstejaCancelado` extraído e as validações do `Compromisso` agrupadas em `validarDados`, sem mudar teste.
-  - **Persistência** (#4: `572ac48`, `5e8dd1f`, `d87dc3a`, `fee25b0`): `Compromisso.reconstituir`, migração com *exclusion constraint* do Postgres contra sobreposição de ativos, entidade JPA separada, mapeador e adaptador que traduz o SQLState `23P01` em `ConflitoDeHorarioExcecao`.
-  - **Casos de uso** (#5: `d83f4f9`, `be71369`): `ServicoDeCompromissos` em Java puro, testado com repositório em memória; `Compromisso.atualizar` e `sobrepoe`.
-  - **API web** (#6: `bd4ccb2`, `43d4b16`): controlador, DTOs, tratador de erros e `FluxoDeCompromissosIntegracaoTest` com Postgres real.
-  - **Observabilidade** (#7: `29c67ed`, `b5a083e`): logs ECS em JSON, `FiltroDeIdDaRequisicao` (`X-Request-Id` e MDC), histograma de `http.server.requests` com balde de 300 ms.
-  - **Desempenho** (#8: `a1829d2`, `0e35bc7`, `b0a84aa`): `tests/k6/smoke.js`, `docs/desempenho.md` e a correção do build da imagem Docker.
+  - **Refactor** (`f03a451`, na #3): `exigirQueNaoEstejaCancelado` extraído e as validações do `Compromisso` agrupadas em `validarDados`, sem mudar teste.
+  - **Persistência** (#4: `dde68d6`, `3a2a03a`, `e865d52`, `5c94caa`): `Compromisso.reconstituir`, migração com *exclusion constraint* do Postgres contra sobreposição de ativos, entidade JPA separada, mapeador e adaptador que traduz o SQLState `23P01` em `ConflitoDeHorarioExcecao`.
+  - **Casos de uso** (#5: `ddc3cfa`, `7e318a8`): `ServicoDeCompromissos` em Java puro, testado com repositório em memória; `Compromisso.atualizar` e `sobrepoe`.
+  - **API web** (#6: `b92bcf8`, `77145de`): controlador, DTOs, tratador de erros e `FluxoDeCompromissosIntegracaoTest` com Postgres real.
+  - **Observabilidade** (#7: `335dcf2`, `5a9a370`): logs ECS em JSON, `FiltroDeIdDaRequisicao` (`X-Request-Id` e MDC), histograma de `http.server.requests` com balde de 300 ms.
+  - **Desempenho** (#8: `c2fd76f`, `d270ecd`, `31b8c31`): `tests/k6/smoke.js`, `docs/desempenho.md` e a correção do build da imagem Docker.
   - **Documentação**: ADR 0001, `docs/openapi.yaml` com Spectral no CI, `CONTRIBUTORS.md`, README, este registro e o `docs/etapas.md`.
 - **Problemas que o agente encontrou e corrigiu no caminho:**
   - O `docker compose up --build` estava quebrado desde a PR #2: o Checkstyle roda na fase `validate`, e a pasta `config/` não é copiada para a imagem. Só apareceu ao subir o Compose para o k6. Correção: `-Dcheckstyle.skip` no build da imagem, já que o lint roda no CI.
