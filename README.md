@@ -123,11 +123,11 @@ Link da última execução verde: COLAR_AQUI
 
 - **Logs estruturados** em JSON, com id da requisição.
 - **Métrica:** duração das requisições HTTP por rota e status, em `/actuator/prometheus`.
-- **SLO simples:** 95% das requisições de `GET /compromissos` respondem em menos de 300 ms (meta provisória, a ajustar depois da medição em [docs/desempenho.md](docs/desempenho.md)).
+- **SLO simples:** 95% das requisições de `GET /compromissos` respondem em menos de 300 ms. Medido com k6: p95 entre 3 e 9 ms ([docs/desempenho.md](docs/desempenho.md)). A métrica tem um balde exato em 300 ms (`le="0.3"`), então o SLO pode ser conferido direto em `/actuator/prometheus`.
 
 ## Desempenho
 
-Smoke test com k6 em `tests/k6/smoke.js`. O p95 medido e a análise estão em [docs/desempenho.md](docs/desempenho.md).
+Smoke test com k6 em `tests/k6/smoke.js` (10 usuários por 30 s em `GET /compromissos`), que falha se o p95 passar de 300 ms. O p95 medido foi de 8,51 ms com a API fria e de 3,09 ms aquecida; o ambiente, os números e a análise estão em [docs/desempenho.md](docs/desempenho.md).
 
 ## Limitações conhecidas
 
