@@ -204,37 +204,37 @@ frase por regra explicando o risco que ela evita.
 
 - **Data:** 10/11
 - **Quem usou:** Laís
-- **PR:** [PREENCHER com o link da PR]
+- **PR:** https://github.com/laiscoutinho/agenda-api/pull/3
 - **Objetivo:** escrever os testes da entidade `Compromisso` antes da implementação (TDD, etapa Red).
 - **Prompt:** texto como foi enviado em [docs/prompts/04-dominio-red.md](prompts/04-dominio-red.md). O pacote base foi preenchido com `com.agenda.agenda_api.dominio` e o texto diz Spring Boot 4, a versão do projeto.
 - **O que a IA devolveu:** `CompromissoTest` com 18 testes em AAA. API proposta: `Compromisso.criar(titulo, descricao, inicio, fim)`, `cancelar()`, getters e `getDescricao()` como `Optional<String>`; exceções `TituloObrigatorioExcecao`, `HorarioObrigatorioExcecao`, `FimNaoPosteriorAoInicioExcecao` e `CompromissoJaCanceladoExcecao`, todas filhas de `ExcecaoDeDominio`. Casos de borda além dos pedidos: título nulo, título só com tabulação e quebra de linha, início ou fim nulos, descrição ausente, fim 1 nanossegundo depois do início (fronteira do `<` contra `<=`), ids diferentes em dois compromissos e status mantido como `CANCELADO` após o segundo cancelamento rejeitado.
 - **O que mudei ou rejeitei, e por quê:** [PREENCHER]
 - **Verificação feita:** os testes não compilavam, e todos os erros eram `cannot find symbol` das classes do domínio que ainda não existiam (nenhum erro de digitação ou de import); valores esperados conferidos como literais; Checkstyle limpo.
-- **Onde ficou:** `src/test/java/com/agenda/agenda_api/dominio/CompromissoTest.java`, commit dc4646f.
+- **Onde ficou:** `src/test/java/com/agenda/agenda_api/dominio/CompromissoTest.java`, commit fa5d500.
 
 ### Prompt 5: entidade Compromisso e exceções de domínio (Green)
 
 - **Data:** 10/11
 - **Quem usou:** Laís
-- **PR:** [PREENCHER com o link da PR]
+- **PR:** https://github.com/laiscoutinho/agenda-api/pull/3
 - **Objetivo:** implementar só o necessário para os testes do prompt 4 passarem.
 - **Prompt:** texto como foi enviado em [docs/prompts/05-dominio-green.md](prompts/05-dominio-green.md), com o `CompromissoTest.java` colado no lugar do marcador.
 - **O que a IA devolveu:** `Compromisso` com construtor privado e fábrica `criar`, que valida título (`null` ou em branco), horários nulos e fim posterior ao início com `isAfter`; `cancelar()` rejeita o segundo cancelamento. `StatusCompromisso`, a classe abstrata `ExcecaoDeDominio` (filha de `RuntimeException`) e as quatro exceções com a mensagem fixa. Nenhum teste foi apontado como errado e nenhum teste foi alterado.
 - **O que mudei ou rejeitei, e por quê:** [PREENCHER]
 - **Verificação feita:** 18 testes verdes; `grep -rE "springframework|jakarta"` no pacote `dominio` sem resultados; Checkstyle limpo; alteração proposital do código (ver seção 6).
-- **Onde ficou:** `src/main/java/com/agenda/agenda_api/dominio/`, commit cfd16dd.
+- **Onde ficou:** `src/main/java/com/agenda/agenda_api/dominio/`, commit f261bdd.
 
 ### Prompt 6: cobertura mínima com JaCoCo
 
 - **Data:** 10/11
 - **Quem usou:** Laís
-- **PR:** [PREENCHER com o link da PR]
+- **PR:** https://github.com/laiscoutinho/agenda-api/pull/3
 - **Objetivo:** falhar o build com cobertura abaixo de 70% em linhas ou em branches.
 - **Prompt:** texto como foi enviado em [docs/prompts/06-jacoco.md](prompts/06-jacoco.md), com o pom.xml colado no lugar do marcador.
 - **O que a IA devolveu:** `jacoco-maven-plugin` 0.8.16 (a versão mais recente no Maven Central, de 26/10/2026) com `prepare-agent`, `report` e `check` na fase `verify`; regra `BUNDLE` com `LINE` e `BRANCH` em `COVEREDRATIO` mínimo de 0.70. Relatório em `target/site/jacoco/index.html`.
 - **O que mudei ou rejeitei, e por quê:** [PREENCHER]
 - **Verificação feita:** `./mvnw verify` com Postgres 16 local (mesmas variáveis do CI) passou com 95,7% de linhas (45/47) e 100% de branches (12/12); as 2 linhas sem cobertura são do `main` de `AgendaApiApplication`. Com o mínimo trocado para 0.99 de propósito, o build falhou em `cobertura-minima` ("Coverage checks have not been met"), e o valor voltou para 0.70.
-- **Onde ficou:** `pom.xml`, commit 3eb1725.
+- **Onde ficou:** `pom.xml`, commit ca1500a.
 
 Modelo de entrada:
 
