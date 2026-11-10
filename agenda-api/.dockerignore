@@ -1,0 +1,8 @@
+# Mantém fora do contexto de build o que não deve ir para a imagem.
+.env
+target/
+.git
+.idea
+.vscode
+*.iml
+HELP.md
