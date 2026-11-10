@@ -23,17 +23,25 @@ public class Compromisso {
 	}
 
 	public static Compromisso criar(String titulo, String descricao, Instant inicio, Instant fim) {
-		exigirTitulo(titulo);
-		exigirHorarios(inicio, fim);
-		exigirFimPosteriorAoInicio(inicio, fim);
+		validarDados(titulo, inicio, fim);
 		return new Compromisso(titulo, descricao, inicio, fim);
 	}
 
 	public void cancelar() {
-		if (status == StatusCompromisso.CANCELADO) {
+		if (estaCancelado()) {
 			throw new CompromissoJaCanceladoExcecao();
 		}
 		status = StatusCompromisso.CANCELADO;
+	}
+
+	public boolean estaCancelado() {
+		return status == StatusCompromisso.CANCELADO;
+	}
+
+	private static void validarDados(String titulo, Instant inicio, Instant fim) {
+		exigirTitulo(titulo);
+		exigirHorarios(inicio, fim);
+		exigirFimPosteriorAoInicio(inicio, fim);
 	}
 
 	private static void exigirTitulo(String titulo) {
