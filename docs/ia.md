@@ -131,7 +131,7 @@ subir e testar com curl no /actuator/health.
 
 - **Data:** 10/11
 - **Quem usou:** Laís
-- **PR:** [PREENCHER: link da PR de ci/pipeline-inicial]
+- **PR:** https://github.com/laiscoutinho/agenda-api/pull/2
 - **Objetivo:** rodar lint, testes e detecção de segredos em toda PR e em push na `main`.
 - **Prompt:** (texto como foi enviado. O prompt diz "Spring Boot 3"; o projeto usa Spring Boot 4.1.2, e o pom.xml colado mostrava a versão certa.)
 
@@ -173,7 +173,7 @@ justificativa de cada decisão em uma frase.
 
 - **Data:** 10/11
 - **Quem usou:** Laís
-- **PR:** [PREENCHER: link da PR de ci/pipeline-inicial]
+- **PR:** https://github.com/laiscoutinho/agenda-api/pull/2
 - **Objetivo:** lint enxuto que falhe o build em violação.
 - **Prompt:** (texto como foi enviado)
 
