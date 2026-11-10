@@ -240,7 +240,7 @@ frase por regra explicando o risco que ela evita.
 
 - **Data:** 10/11
 - **Quem usou:** Laís
-- **PRs:** [#4](https://github.com/laiscoutinho/agenda-api/pull/4), [#5](https://github.com/laiscoutinho/agenda-api/pull/5), [#6](https://github.com/laiscoutinho/agenda-api/pull/6), [#7](https://github.com/laiscoutinho/agenda-api/pull/7), [#8](https://github.com/laiscoutinho/agenda-api/pull/8) e a PR de documentação; o refactor entrou na [#3](https://github.com/laiscoutinho/agenda-api/pull/3)
+- **PRs:** [#4](https://github.com/laiscoutinho/agenda-api/pull/4), [#5](https://github.com/laiscoutinho/agenda-api/pull/5), [#6](https://github.com/laiscoutinho/agenda-api/pull/6), [#7](https://github.com/laiscoutinho/agenda-api/pull/7), [#8](https://github.com/laiscoutinho/agenda-api/pull/8) e [#9](https://github.com/laiscoutinho/agenda-api/pull/9) (documentação); o refactor entrou na [#3](https://github.com/laiscoutinho/agenda-api/pull/3)
 - **Objetivo:** fazer as etapas 3 (refactor) a 9 do [docs/etapas.md](etapas.md) sem precisar aprovar cada passo.
 - **Prompt:** texto exatamente como foi enviado em [docs/prompts/07-etapas-restantes.md](prompts/07-etapas-restantes.md). **Diferente dos prompts 1 a 6:** foi uma delegação ampla a um agente (Claude Code), que lê e escreve arquivos, roda comandos, testes e o Docker, faz commit, push e abre PRs. Não segue a estrutura Papel, Contexto, Tarefa, Restrições, Formato, nem a regra de uma mudança por prompt (seção 2). Por isso a revisão humana de cada PR é ainda mais importante aqui.
 - **O que a IA devolveu:** uma branch por etapa, empilhadas, com TDD onde havia regra nova (teste primeiro, depois a implementação):

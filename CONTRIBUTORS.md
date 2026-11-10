@@ -17,7 +17,7 @@
 | API web e teste de integração | `feat/api-compromissos` | Laís | revisão: [PREENCHER] |
 | Observabilidade | `feat/observabilidade` | Laís | revisão: [PREENCHER] |
 | Desempenho (k6) | `perf/smoke-k6` | Laís | revisão: [PREENCHER] |
-| ADR, OpenAPI e documentação | `docs/adr-openapi` | Laís | revisão: [PREENCHER] |
+| ADR, OpenAPI e documentação | `docs/adr-openapi`, [PR #9](https://github.com/laiscoutinho/agenda-api/pull/9) | Laís | revisão: [PREENCHER] |
 
 ## Como contribuímos
 

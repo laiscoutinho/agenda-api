@@ -22,7 +22,7 @@ Todo o código está feito e em PRs empilhadas, cada uma sobre a anterior. O que
 | API web, erros HTTP e teste de integração | ✅ feito (PR #6 aberta) |
 | Observabilidade (logs JSON, métrica, SLO) | ✅ feito (PR #7 aberta) |
 | Desempenho (k6 e p95 medido) | ✅ feito (PR #8 aberta) |
-| Documentação (ADR, OpenAPI, CONTRIBUTORS) | ✅ feito (PR de documentação aberta) |
+| Documentação (ADR, OpenAPI, CONTRIBUTORS) | ✅ feito (PR #9 aberta) |
 | Revisão, merge e campos `[PREENCHER]` | ⬜ falta |
 | Entrega no Moodle | ⬜ falta |
 
@@ -122,7 +122,7 @@ Branch `feat/observabilidade`, [PR #7](https://github.com/laiscoutinho/agenda-ap
 
 ### 8. Documentação: ✅ feito
 
-Branch `docs/adr-openapi` (PR aberta).
+Branch `docs/adr-openapi`, [PR #9](https://github.com/laiscoutinho/agenda-api/pull/9) (aberta).
 
 - ✅ ADR 0001 em MADR: camadas com o domínio isolado e Repository, com as alternativas descartadas
 - ✅ `docs/openapi.yaml` (OpenAPI 3.1) validado com Spectral 6.17.0, também no CI (job `openapi`)
@@ -143,7 +143,7 @@ Branch `perf/smoke-k6`, [PR #8](https://github.com/laiscoutinho/agenda-api/pull/
 
 Até 13/11.
 
-- ⬜ Rosana revisar as PRs #1 a #8 e a de documentação, na ordem, e mergear (cada base muda para `main` quando a anterior entra)
+- ⬜ Rosana revisar as PRs #1 a #9, na ordem, e mergear (cada base muda para `main` quando a anterior entra)
 - ⬜ Todas as PRs mergeadas na `main`, com o CI verde na `main`; trocar no README o link do CI pelo da `main`
 - ⬜ Teste do zero: clonar, `cp .env.example .env`, `docker compose up --build`, `curl /actuator/health`
 - ⬜ Nenhum `[PREENCHER]`, `A DEFINIR` ou `COLAR_AQUI` sobrando nos documentos
