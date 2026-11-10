@@ -1,5 +1,5 @@
-# Integração contínua: lint, testes e detecção de segredos.
-# Os nomes dos jobs ("verificacao" e "segredos") são usados como checks
+# Integração contínua: lint, testes, detecção de segredos e validação do OpenAPI.
+# Os nomes dos jobs ("verificacao", "segredos" e "openapi") são usados como checks
 # obrigatórios da main; não renomeie sem atualizar a proteção de branch.
 
 name: CI
@@ -86,3 +86,18 @@ jobs:
           # Comentar na PR exigiria "pull-requests: write"; o resultado
           # aparece no log e no resumo do job.
           GITLEAKS_ENABLE_COMMENTS: "false"
+
+  openapi:
+    name: openapi
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Versão fixa do Spectral para o resultado não mudar sozinho.
+      # Regras em .spectral.yaml; qualquer aviso falha o job.
+      - name: Validar docs/openapi.yaml com o Spectral
+        run: npx --yes @stoplight/spectral-cli@6.17.0 lint docs/openapi.yaml --fail-severity=warn
