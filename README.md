@@ -58,13 +58,13 @@ O corpo do erro é JSON com os campos `erro` e `mensagem`.
 | Área | Tecnologia |
 |---|---|
 | Linguagem e build | Java 21 e Maven |
-| Framework | Spring Boot 3 |
+| Framework | Spring Boot 4 |
 | Banco de dados | PostgreSQL |
 | Acesso a dados | Spring Data JPA (Hibernate) |
 | Migrações | Flyway |
 | Validação | Bean Validation |
 | Containers | Docker e Docker Compose |
-| Testes | JUnit 5, AssertJ e Spring Boot Test |
+| Testes | JUnit 6, AssertJ e Spring Boot Test |
 | Coverage | JaCoCo |
 | Lint | Checkstyle |
 | CI | GitHub Actions |
@@ -79,10 +79,10 @@ O corpo do erro é JSON com os campos `erro` e `mensagem`.
 Pré-requisitos: Docker e Docker Compose.
 
 ```bash
-git clone URL_DO_REPOSITORIO
-cd NOME_DO_REPOSITORIO
+git clone https://github.com/laiscoutinho/agenda-api.git
+cd agenda-api
 cp .env.example .env
-docker compose up
+docker compose up --build
 ```
 
 A API fica disponível em `http://localhost:8080`. Teste com:
@@ -106,7 +106,7 @@ Pré-requisito: Java 21.
 
 ## Variáveis de ambiente
 
-Copie `.env.example` para `.env`. Segredos nunca são commitados; o arquivo `.env` está no `.gitignore` e o CI roda o gitleaks.
+Copie `.env.example` para `.env` e troque os placeholders. O `docker-compose.yml` lê `POSTGRES_DB`, `POSTGRES_USER` e `POSTGRES_PASSWORD` e monta a partir delas as variáveis `SPRING_DATASOURCE_*` que o Spring lê; se alguma faltar, o Compose para com erro. Segredos nunca são commitados; o arquivo `.env` está no `.gitignore` e o CI roda o gitleaks.
 
 ## CI
 

@@ -47,7 +47,7 @@ Estas decisões foram tomadas por nós, não delegadas à IA. A IA foi usada, no
 | 8 | CI | GitHub Actions: Java 21 com cache do Maven; Checkstyle, depois testes e JaCoCo; `permissions: contents: read`; Postgres via `services`; gitleaks | Análise estática com Semgrep, fora do escopo do nível B | `.github/workflows/ci.yml` |
 | 9 | Processo | PR obrigatória na `main`, revisada pela outra integrante | Push direto na `main` | Proteção de branch |
 | 10 | Segurança nos prompts | Nunca colar `.env`, senhas ou tokens | N/A | Seção 3 deste documento |
-| 11 | Stack | Java 21, Spring Boot 3 e Maven. Motivo: conhecimento técnico mais aprofundado em Java, o que permite implementar o sistema no prazo e explicar o código. Os exemplos de ferramentas do PDF são de Node, mas são apenas exemplos. | Node.js com TypeScript e Express (exemplos usados no curso) | README |
+| 11 | Stack | Java 21, Spring Boot 4 e Maven. Motivo: conhecimento técnico mais aprofundado em Java, o que permite implementar o sistema no prazo e explicar o código. Os exemplos de ferramentas do PDF são de Node, mas são apenas exemplos. | Node.js com TypeScript e Express (exemplos usados no curso) | README |
 | 12 | Banco | PostgreSQL, igual no Compose, no CI e nos testes de integração | SQLite | `docker-compose.yml` |
 | 13 | Acesso a dados | Spring Data JPA (Hibernate), com entidade de domínio separada da entidade JPA e um mapeador entre elas | `JdbcTemplate` (SQL puro, sem tipagem) | [ADR 0001](adr/0001-decisao.md) |
 | 14 | Migrações | Flyway, com migrações SQL versionadas no repositório | `ddl-auto=update` (sem histórico, banco pode divergir entre ambientes) | `src/main/resources/db/migration` |
@@ -72,7 +72,62 @@ Estas decisões foram tomadas por nós, não delegadas à IA. A IA foi usada, no
 
 Os prompts são registrados **durante o desenvolvimento**, na mesma PR em que o código gerado com ajuda da IA entra. Só entram prompts que realmente foram usados e que importaram, com o texto como foi enviado.
 
-Nenhum registro ainda. Modelo de entrada:
+### Prompt 1: infraestrutura de execução com Docker
+
+- **Data:** 10/11
+- **Quem usou:** Laís
+- **PR:** https://github.com/laiscoutinho/agenda-api/pull/1
+- **Objetivo:** subir a API e o PostgreSQL localmente com Docker, sem segredos no código.
+- **Prompt:** (texto como foi enviado; o pom.xml foi colado no lugar do marcador. O prompt diz "Spring Boot 3", mas o projeto gerado usa Spring Boot 4.1.2; a documentação foi corrigida nesta PR.)
+
+```text
+Papel: você é um engenheiro DevOps/backend sênior, cuidadoso com segurança
+e com builds reproduzíveis.
+
+Contexto: projeto Java 21 com Spring Boot 3, Maven (com Maven Wrapper) e
+PostgreSQL 16, gerado no start.spring.io com as dependências Web, Validation,
+Data JPA, driver do PostgreSQL, Flyway, Actuator e Prometheus. O pom.xml
+está abaixo. A API ainda não tem regra de negócio, só a estrutura. Decisões
+da equipe: tudo roda localmente com Docker; sem autenticação; build em
+estágios; usuário não-root; a API só sobe com o banco saudável; segredos
+nunca no código. Todos os comentários e a documentação em português.
+[COLAR AQUI O pom.xml]
+
+Tarefa: crie a infraestrutura de execução: Dockerfile, docker-compose.yml,
+.env.example e src/main/resources/application.properties.
+
+Restrições:
+- Dockerfile em dois estágios: build com Maven (aproveitando o cache de
+  dependências, copiando o pom.xml antes do código) e execução com uma
+  imagem JRE 21 oficial. Rodar como usuário não-root. O build da imagem não
+  executa os testes, porque o CI já os executa.
+- docker-compose.yml com os serviços "db" (PostgreSQL 16 com healthcheck
+  usando pg_isready e volume para os dados) e "api" (depends_on com
+  condition: service_healthy, porta 8080). Credenciais vindas do arquivo
+  .env, nunca escritas no compose.
+- .env.example apenas com placeholders, sem nenhum valor real. Use os nomes
+  de variável exigidos pela imagem do PostgreSQL e pelo Spring.
+- application.properties lê a conexão do banco só de variáveis de ambiente,
+  sem senha padrão. Flyway habilitado e Hibernate com ddl-auto=none: o
+  esquema virá só das migrações. Exponha no Actuator apenas health e
+  prometheus.
+- Não adicione dependências nem altere o pom.xml. Não invente versões de
+  imagem: use apenas tags que existem nos repositórios oficiais e diga quais
+  você usou.
+- Não use ddl-auto=update.
+
+Formato: um bloco de código por arquivo, na ordem Dockerfile,
+docker-compose.yml, .env.example, application.properties. Depois, uma lista
+curta com a justificativa de cada decisão em uma frase, e os comandos para
+subir e testar com curl no /actuator/health.
+```
+
+- **O que a IA devolveu:** Dockerfile em dois estágios, docker-compose.yml com `db` e `api`, `.env.example` com placeholders e `application.properties` lendo a conexão de variáveis de ambiente.
+- **O que mudei ou rejeitei, e por quê:** [PREENCHER]
+- **Verificação feita:** leitura linha a linha; tags `postgres:16`, `eclipse-temurin:21-jdk` e `eclipse-temurin:21-jre` conferidas no Docker Hub [CONFIRMAR]; `docker compose up --build` com o banco saudável e `curl http://localhost:8080/actuator/health` respondendo `UP`.
+- **Onde ficou:** `Dockerfile`, `docker-compose.yml`, `.env.example`, `.dockerignore` e `src/main/resources/application.properties`, commit 3ab1fae.
+
+Modelo de entrada:
 
 ### Prompt N: título curto
 
