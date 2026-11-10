@@ -8,10 +8,10 @@ import java.util.UUID;
 public class Compromisso {
 
 	private final UUID id;
-	private final String titulo;
-	private final String descricao;
-	private final Instant inicio;
-	private final Instant fim;
+	private String titulo;
+	private String descricao;
+	private Instant inicio;
+	private Instant fim;
 	private StatusCompromisso status;
 
 	private Compromisso(UUID id, String titulo, String descricao, Instant inicio, Instant fim,
@@ -41,6 +41,26 @@ public class Compromisso {
 			throw new CompromissoJaCanceladoExcecao();
 		}
 		status = StatusCompromisso.CANCELADO;
+	}
+
+	/** Troca os dados do compromisso, com as mesmas validações da criação. */
+	public void atualizar(String novoTitulo, String novaDescricao, Instant novoInicio, Instant novoFim) {
+		if (estaCancelado()) {
+			throw new CompromissoCanceladoNaoPodeSerEditadoExcecao();
+		}
+		validarDados(novoTitulo, novoInicio, novoFim);
+		titulo = novoTitulo;
+		descricao = novaDescricao;
+		inicio = novoInicio;
+		fim = novoFim;
+	}
+
+	/**
+	 * Indica se o compromisso ocupa parte do intervalo [outroInicio, outroFim).
+	 * Encostar nas bordas (um termina quando o outro começa) não é sobreposição.
+	 */
+	public boolean sobrepoe(Instant outroInicio, Instant outroFim) {
+		return inicio.isBefore(outroFim) && outroInicio.isBefore(fim);
 	}
 
 	public boolean estaCancelado() {
