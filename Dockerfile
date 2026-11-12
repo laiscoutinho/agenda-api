@@ -18,8 +18,9 @@ RUN chmod +x mvnw && ./mvnw -B -q dependency:go-offline
 # Agora copia o código. Mudanças aqui não invalidam o cache de dependências.
 COPY src/ src/
 
-# Os testes não rodam aqui porque o CI já os executa.
-RUN ./mvnw -B -q -o package -DskipTests \
+# Os testes e o Checkstyle não rodam aqui porque o CI já os executa
+# (e a pasta config/ do Checkstyle nem é copiada para a imagem).
+RUN ./mvnw -B -q -o package -DskipTests -Dcheckstyle.skip \
     && cp target/*.jar /workspace/app.jar
 
 # ---------------------------------------------------------------------------
