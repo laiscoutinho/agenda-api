@@ -8,8 +8,8 @@ Documento de transparência sobre o uso de inteligência artificial neste projet
 
 | Pessoa | Ferramenta | Como usou |
 |---|---|---|
-| Laís Coutinho | [PREENCHER: nome da ferramenta e modelo, ex.: assistente integrado ao editor] | Rascunhos de testes, implementação, configuração e documentação, sempre revisados |
-| Rosana Celine | [PREENCHER: ferramenta ou "não usou IA"] | [PREENCHER com o que de fato fez] |
+| Laís Coutinho | Claude Opus 5.5 | Inicialização do projeto , configuração da pipiline de CI |
+| Rosana Celine | [PREENCHER: nome da ferramenta e modelo, ex.: assistente integrado ao editor] | Rascunhos de testes, implementação, configuração e documentação, sempre revisados |
 
 Cada pessoa registra os próprios prompts na seção 5. O campo "Quem usou" identifica a autoria.
 
@@ -200,6 +200,42 @@ frase por regra explicando o risco que ela evita.
 - **Verificação feita:** `./mvnw checkstyle:check` passa no código atual; uma classe com import não usado, `if` sem chaves e método `Metodo_Ruim` fez o build falhar com as três violações.
 - **Onde ficou:** `pom.xml` e `config/checkstyle.xml`
 
+### Prompt 4: testes de domínio do compromisso (Red)
+
+- **Data:** 10/11
+- **Quem usou:** Laís
+- **PR:** https://github.com/laiscoutinho/agenda-api/pull/3
+- **Objetivo:** escrever os testes da entidade `Compromisso` antes da implementação (TDD, etapa Red).
+- **Prompt:** texto como foi enviado em [docs/prompts/04-dominio-red.md](prompts/04-dominio-red.md). O pacote base foi preenchido com `com.agenda.agenda_api.dominio` e o texto diz Spring Boot 4, a versão do projeto.
+- **O que a IA devolveu:** `CompromissoTest` com 18 testes em AAA. API proposta: `Compromisso.criar(titulo, descricao, inicio, fim)`, `cancelar()`, getters e `getDescricao()` como `Optional<String>`; exceções `TituloObrigatorioExcecao`, `HorarioObrigatorioExcecao`, `FimNaoPosteriorAoInicioExcecao` e `CompromissoJaCanceladoExcecao`, todas filhas de `ExcecaoDeDominio`. Casos de borda além dos pedidos: título nulo, título só com tabulação e quebra de linha, início ou fim nulos, descrição ausente, fim 1 nanossegundo depois do início (fronteira do `<` contra `<=`), ids diferentes em dois compromissos e status mantido como `CANCELADO` após o segundo cancelamento rejeitado.
+- **O que mudei ou rejeitei, e por quê:** [PREENCHER]
+- **Verificação feita:** os testes não compilavam, e todos os erros eram `cannot find symbol` das classes do domínio que ainda não existiam (nenhum erro de digitação ou de import); valores esperados conferidos como literais; Checkstyle limpo.
+- **Onde ficou:** `src/test/java/com/agenda/agenda_api/dominio/CompromissoTest.java`, commit fa5d500.
+
+### Prompt 5: entidade Compromisso e exceções de domínio (Green)
+
+- **Data:** 10/11
+- **Quem usou:** Laís
+- **PR:** https://github.com/laiscoutinho/agenda-api/pull/3
+- **Objetivo:** implementar só o necessário para os testes do prompt 4 passarem.
+- **Prompt:** texto como foi enviado em [docs/prompts/05-dominio-green.md](prompts/05-dominio-green.md), com o `CompromissoTest.java` colado no lugar do marcador.
+- **O que a IA devolveu:** `Compromisso` com construtor privado e fábrica `criar`, que valida título (`null` ou em branco), horários nulos e fim posterior ao início com `isAfter`; `cancelar()` rejeita o segundo cancelamento. `StatusCompromisso`, a classe abstrata `ExcecaoDeDominio` (filha de `RuntimeException`) e as quatro exceções com a mensagem fixa. Nenhum teste foi apontado como errado e nenhum teste foi alterado.
+- **O que mudei ou rejeitei, e por quê:** [PREENCHER]
+- **Verificação feita:** 18 testes verdes; `grep -rE "springframework|jakarta"` no pacote `dominio` sem resultados; Checkstyle limpo; alteração proposital do código (ver seção 6).
+- **Onde ficou:** `src/main/java/com/agenda/agenda_api/dominio/`, commit f261bdd.
+
+### Prompt 6: cobertura mínima com JaCoCo
+
+- **Data:** 10/11
+- **Quem usou:** Laís
+- **PR:** https://github.com/laiscoutinho/agenda-api/pull/3
+- **Objetivo:** falhar o build com cobertura abaixo de 70% em linhas ou em branches.
+- **Prompt:** texto como foi enviado em [docs/prompts/06-jacoco.md](prompts/06-jacoco.md), com o pom.xml colado no lugar do marcador.
+- **O que a IA devolveu:** `jacoco-maven-plugin` 0.8.16 (a versão mais recente no Maven Central, de 26/10/2026) com `prepare-agent`, `report` e `check` na fase `verify`; regra `BUNDLE` com `LINE` e `BRANCH` em `COVEREDRATIO` mínimo de 0.70. Relatório em `target/site/jacoco/index.html`.
+- **O que mudei ou rejeitei, e por quê:** [PREENCHER]
+- **Verificação feita:** `./mvnw verify` com Postgres 16 local (mesmas variáveis do CI) passou com 95,7% de linhas (45/47) e 100% de branches (12/12); as 2 linhas sem cobertura são do `main` de `AgendaApiApplication`. Com o mínimo trocado para 0.99 de propósito, o build falhou em `cobertura-minima` ("Coverage checks have not been met"), e o valor voltou para 0.70.
+- **Onde ficou:** `pom.xml`, commit ca1500a.
+
 Modelo de entrada:
 
 ### Prompt N: título curto
@@ -228,8 +264,12 @@ Formato:
 - Toda saída foi lida linha a linha antes do commit.
 - Imports e dependências conferidos na documentação oficial.
 - Testes rodados localmente e no CI.
-- Suíte validada por alteração proposital no código: [PREENCHER com o que foi feito e o resultado].
-- Checagem de testes tautológicos: [PREENCHER].
+- Suíte validada por alteração proposital no código (`Compromisso`, 10/11), uma alteração por vez, revertida em seguida:
+  - fim igual ao início passou a ser aceito (`!fim.isAfter(inicio)` trocado por `fim.isBefore(inicio)`, o equivalente a trocar `<` por `<=`): 1 teste falhou, `fimIgualAoInicioERejeitado`;
+  - validação do título apagada: 5 testes falharam (título vazio, só espaços, só tabulação e quebra de linha, nulo, e a herança de `ExcecaoDeDominio`);
+  - checagem de "já cancelado" apagada do `cancelar()`: 1 teste falhou, `cancelarDuasVezesERejeitado`.
+  Com o código original, os 18 testes voltaram a passar.
+- Checagem de testes tautológicos: em `CompromissoTest`, todo valor esperado é literal (textos, `Instant.parse("...")` e constantes do enum), e nenhum é calculado pela lógica da entidade. As mensagens das exceções estão escritas por extenso no teste, em vez de lidas da própria classe. A única comparação que não usa literal é a de ids diferentes, que compara dois valores gerados, sem prever o valor. [PREENCHER: confirme que você conferiu e se rejeitou algum teste]
 - Checklist do revisor humano em cada PR: o autor explica o código linha a linha? A complexidade é adequada? Segue os padrões do projeto? Algum trecho parece copiado de outro lugar?
 
 ## 7. Limitações e riscos reconhecidos
