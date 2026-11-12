@@ -1,6 +1,7 @@
 package com.agenda.agenda_api.dominio;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,18 +14,26 @@ public class Compromisso {
 	private final Instant fim;
 	private StatusCompromisso status;
 
-	private Compromisso(String titulo, String descricao, Instant inicio, Instant fim) {
-		this.id = UUID.randomUUID();
+	private Compromisso(UUID id, String titulo, String descricao, Instant inicio, Instant fim,
+			StatusCompromisso status) {
+		this.id = Objects.requireNonNull(id, "id");
 		this.titulo = titulo;
 		this.descricao = descricao;
 		this.inicio = inicio;
 		this.fim = fim;
-		this.status = StatusCompromisso.ATIVO;
+		this.status = Objects.requireNonNull(status, "status");
 	}
 
 	public static Compromisso criar(String titulo, String descricao, Instant inicio, Instant fim) {
 		validarDados(titulo, inicio, fim);
-		return new Compromisso(titulo, descricao, inicio, fim);
+		return new Compromisso(UUID.randomUUID(), titulo, descricao, inicio, fim, StatusCompromisso.ATIVO);
+	}
+
+	/** Recria um compromisso já existente (por exemplo, lido do banco), mantendo id e status. */
+	public static Compromisso reconstituir(UUID id, String titulo, String descricao, Instant inicio, Instant fim,
+			StatusCompromisso status) {
+		validarDados(titulo, inicio, fim);
+		return new Compromisso(id, titulo, descricao, inicio, fim, status);
 	}
 
 	public void cancelar() {
