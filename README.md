@@ -110,7 +110,12 @@ Copie `.env.example` para `.env` e troque os placeholders. O `docker-compose.yml
 
 ## CI
 
-Workflow em `.github/workflows/ci.yml`: configura o Java 21, roda lint, testes e verificação de cobertura.
+Workflow em `.github/workflows/ci.yml`, disparado em toda PR e em push na `main`, com dois jobs:
+
+- `verificacao`: Java 21 com cache do Maven, Checkstyle e depois `./mvnw verify`, com PostgreSQL 16 em `services`.
+- `segredos`: gitleaks em todo o histórico do repositório.
+
+A verificação de cobertura com JaCoCo entra junto com os testes do domínio.
 
 Link da última execução verde: COLAR_AQUI
 

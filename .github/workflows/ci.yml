@@ -1,0 +1,88 @@
+# Integração contínua: lint, testes e detecção de segredos.
+# Os nomes dos jobs ("verificacao" e "segredos") são usados como checks
+# obrigatórios da main; não renomeie sem atualizar a proteção de branch.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Permissão mínima: o workflow só lê o código.
+permissions:
+  contents: read
+
+# Um push novo na mesma branch cancela a execução anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificacao:
+    name: verificacao
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Banco descartável: existe só durante o job, por isso a senha pode
+    # ficar aqui. Não é segredo de nenhum ambiente real.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: agenda_teste
+          POSTGRES_USER: agenda
+          POSTGRES_PASSWORD: agenda_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agenda -d agenda_teste"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Mesmas variáveis que o application.properties lê.
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/agenda_teste
+      SPRING_DATASOURCE_USERNAME: agenda
+      SPRING_DATASOURCE_PASSWORD: agenda_ci
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Configurar Java 21 com cache do Maven
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      # Passo mais barato primeiro: falha rápido em erro de estilo.
+      - name: Checkstyle
+        run: ./mvnw -B -ntp checkstyle:check
+
+      - name: Testes (mvn verify)
+        run: ./mvnw -B -ntp verify
+
+  segredos:
+    name: segredos
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Baixar o código com todo o histórico
+        uses: actions/checkout@v7
+        with:
+          # O gitleaks varre os commits, então precisa do histórico completo.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Comentar na PR exigiria "pull-requests: write"; o resultado
+          # aparece no log e no resumo do job.
+          GITLEAKS_ENABLE_COMMENTS: "false"

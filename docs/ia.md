@@ -127,6 +127,79 @@ subir e testar com curl no /actuator/health.
 - **Verificação feita:** leitura linha a linha; tags `postgres:16`, `eclipse-temurin:21-jdk` e `eclipse-temurin:21-jre` conferidas no Docker Hub [CONFIRMAR]; `docker compose up --build` com o banco saudável e `curl http://localhost:8080/actuator/health` respondendo `UP`.
 - **Onde ficou:** `Dockerfile`, `docker-compose.yml`, `.env.example`, `.dockerignore` e `src/main/resources/application.properties`, commit 3ab1fae.
 
+### Prompt 2: workflow do GitHub Actions
+
+- **Data:** 10/11
+- **Quem usou:** Laís
+- **PR:** https://github.com/laiscoutinho/agenda-api/pull/2
+- **Objetivo:** rodar lint, testes e detecção de segredos em toda PR e em push na `main`.
+- **Prompt:** (texto como foi enviado. O prompt diz "Spring Boot 3"; o projeto usa Spring Boot 4.1.2, e o pom.xml colado mostrava a versão certa.)
+
+```text
+Papel: você é um engenheiro DevOps sênior, rigoroso com segurança de pipeline.
+
+Contexto: projeto Java 21, Spring Boot 3, Maven com Maven Wrapper, PostgreSQL
+16. Já existem Dockerfile e docker-compose. O pom.xml está abaixo. O teste
+contextLoads gerado pelo Spring precisa de um banco. Decisões da equipe:
+Postgres via `services` do GitHub Actions; permissões mínimas; ordem dos
+passos do mais barato ao mais caro; segredos nunca no código. Comentários e
+nomes em português. [COLAR O pom.xml]
+
+Tarefa: crie .github/workflows/ci.yml com um job de verificação e um job de
+detecção de segredos com o gitleaks.
+
+Restrições:
+- Gatilhos: pull_request e push na branch main.
+- `permissions: contents: read` definido no workflow.
+- Java 21 com cache do Maven.
+- Ordem no job de verificação: Checkstyle, depois `./mvnw verify`.
+- Postgres 16 em `services`, com health-cmd (pg_isready); a conexão do teste
+  vem de variáveis de ambiente. A senha do banco de teste pode ficar no YAML
+  porque o banco só existe durante o job.
+- Dê aos jobs nomes estáveis (serão checks obrigatórios da main).
+- Não invente versões: use apenas actions e tags que existem e diga quais
+  usou. Não adicione dependências ao pom.xml.
+
+Formato: um bloco de código com o ci.yml, e uma lista curta com a
+justificativa de cada decisão em uma frase.
+```
+
+- **O que a IA devolveu:** `ci.yml` com os jobs `verificacao` (Postgres 16 em `services`, Checkstyle e depois `./mvnw verify`) e `segredos` (gitleaks em todo o histórico). Actions: `actions/checkout@v7`, `actions/setup-java@v6` e `gitleaks/gitleaks-action@v3`.
+- **O que mudei ou rejeitei, e por quê:** [PREENCHER]
+- **Verificação feita:** tags `v7`, `v6` e `v3` conferidas nos repositórios oficiais; o gitleaks-action não exige licença para conta pessoal (README da action); comentários do gitleaks na PR desligados para manter `contents: read`; `./mvnw verify` rodado localmente contra um Postgres 16 com as mesmas variáveis do CI; gitleaks local sem vazamentos; CI verde na PR: [PREENCHER com o link da execução].
+- **Onde ficou:** `.github/workflows/ci.yml`
+
+### Prompt 3: Checkstyle
+
+- **Data:** 10/11
+- **Quem usou:** Laís
+- **PR:** https://github.com/laiscoutinho/agenda-api/pull/2
+- **Objetivo:** lint enxuto que falhe o build em violação.
+- **Prompt:** (texto como foi enviado)
+
+```text
+Papel: você é um engenheiro Java que cuida de padronização de código.
+
+Contexto: projeto Maven Java 21. Todo o código será em português. Queremos um
+lint enxuto, que não gere centenas de avisos num projeto novo. [COLAR O pom.xml]
+
+Tarefa: configure o maven-checkstyle-plugin no pom.xml e crie
+config/checkstyle.xml com regras enxutas: convenção de nomes, imports não
+usados, blocos sem chaves, tamanho máximo de método e de linha.
+
+Restrições: o build falha em violação; não use as regras sun_checks nem
+google_checks completas; não adicione outras dependências; diga a versão do
+plugin que usou.
+
+Formato: o trecho do pom.xml e o checkstyle.xml, cada um em um bloco, e uma
+frase por regra explicando o risco que ela evita.
+```
+
+- **O que a IA devolveu:** `maven-checkstyle-plugin` 3.6.0 ligado à fase `validate` e `config/checkstyle.xml` com nomes, imports não usados, chaves obrigatórias, método até 40 linhas e linha até 120 caracteres.
+- **O que mudei ou rejeitei, e por quê:** [PREENCHER] Ponto de atenção: o plugin 3.6.0 traz o Checkstyle 9.3, que não interpreta toda a sintaxe do Java 21; por isso o plugin declara a dependência `com.puppycrawl.tools:checkstyle:14.3.0`. É uma dependência do plugin, não do projeto, mas foge da restrição "não adicione outras dependências" e precisa de acordo entre nós duas.
+- **Verificação feita:** `./mvnw checkstyle:check` passa no código atual; uma classe com import não usado, `if` sem chaves e método `Metodo_Ruim` fez o build falhar com as três violações.
+- **Onde ficou:** `pom.xml` e `config/checkstyle.xml`
+
 Modelo de entrada:
 
 ### Prompt N: título curto
