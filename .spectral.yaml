@@ -1,0 +1,3 @@
+# Regras do Spectral para docs/openapi.yaml: o conjunto recomendado para OpenAPI.
+# No CI, qualquer aviso (warn) já falha o passo.
+extends: ["spectral:oas"]

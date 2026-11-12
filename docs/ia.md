@@ -8,7 +8,7 @@ Documento de transparência sobre o uso de inteligência artificial neste projet
 
 | Pessoa | Ferramenta | Como usou |
 |---|---|---|
-| Laís Coutinho | Claude Opus 5.5 | Inicialização do projeto , configuração da pipiline de CI |
+| Laís Coutinho | Claude Opus 5.5 (no Claude Code, agente no terminal) | Inicialização do projeto e pipeline de CI (prompts 1 a 3); domínio com TDD e JaCoCo (prompts 4 a 6); as etapas 4 a 9 delegadas ao agente (prompt 7) |
 | Rosana Celine | [PREENCHER: nome da ferramenta e modelo, ex.: assistente integrado ao editor] | Rascunhos de testes, implementação, configuração e documentação, sempre revisados |
 
 Cada pessoa registra os próprios prompts na seção 5. O campo "Quem usou" identifica a autoria.
@@ -56,12 +56,12 @@ Estas decisões foram tomadas por nós, não delegadas à IA. A IA foi usada, no
 | 17 | Identificador | UUID gerado pela aplicação | Inteiro autoincrementado | domínio e migração |
 | 18 | Cancelamento | Muda o status para `CANCELADO`; não existe `DELETE`, para preservar o histórico | Exclusão física | contrato da API |
 | 19 | Edição (`PUT`) | Revalida a sobreposição ignorando o próprio compromisso; não permite editar um compromisso cancelado | Permitir editar sem revalidar | caso de uso de edição |
-| 20 | Erros HTTP | 400 dados inválidos, 404 não encontrado, 409 conflito de horário, corpo JSON padronizado com `erro` e `mensagem` | Responder sempre 400 ou 500 | contrato da API |
+| 20 | Erros HTTP | 400 dados inválidos, 404 não encontrado, 409 conflito de horário, corpo JSON padronizado com `erro` e `mensagem`. Na implementação, editar ou cancelar de novo um compromisso cancelado também virou 409, com o código `COMPROMISSO_CANCELADO` | Responder sempre 400 ou 500 | contrato da API |
 | 21 | Escopo e execução | Sem autenticação, sem paginação e sem hospedagem: cada pessoa executa a API localmente com Docker, pois uma API sem autenticação e com banco não deve ficar exposta na internet. Autenticação (JWT) fica como evolução futura, inclusive para reuso da API em outros projetos. | Spring Security com JWT agora | README, seção de limitações |
 | 22 | Docker | Build em estágios (Maven no build, JRE 21 na execução), usuário não-root; no Compose a API só sobe com o banco saudável (`healthcheck`) | Imagem única com JDK e Maven | `Dockerfile` e `docker-compose.yml` |
-| 23 | Configuração | Propriedades validadas na inicialização (`@ConfigurationProperties` com `@Validated`), falhando cedo; `.env.example` sem valores reais | `@Value` solto pelo código | `.env.example` |
+| 23 | Configuração | Propriedades validadas na inicialização (`@ConfigurationProperties` com `@Validated`), falhando cedo; `.env.example` sem valores reais. **Não aplicado:** o projeto não tem nenhuma propriedade própria. O banco vem de variáveis de ambiente sem valor padrão (`${SPRING_DATASOURCE_URL}`), e a aplicação já não sobe se faltar uma | `@Value` solto pelo código | `.env.example` |
 | 24 | Observabilidade | Actuator e Micrometer (Prometheus) com duração HTTP por rota e status; logs JSON com id da requisição | Só logs de texto | README |
-| 25 | SLO | Medir primeiro com o k6 e só depois declarar a meta; os 300 ms do README são provisórios | Declarar um número antes de medir | [desempenho](desempenho.md) |
+| 25 | SLO | Medir primeiro com o k6 e só depois declarar a meta. Medido em 10/11: p95 de 3 a 9 ms, e a meta de 300 ms foi mantida, com a justificativa em [desempenho](desempenho.md) | Declarar um número antes de medir | [desempenho](desempenho.md) |
 | 26 | Idioma | Todo o código em português: classes, métodos, variáveis, pacotes, rotas, campos JSON e mensagens de erro. Documentação e comentários também em português. Exceções inevitáveis: palavras reservadas do Java, nomes de bibliotecas e anotações do Spring, e as tags de tipo dos commits (`feat`, `fix`, `test`, `docs`, `ci`, `chore`). | Código em inglês com contrato em português, ou tudo em inglês | README |
 | 27 | Commits e PRs | Tag de tipo seguida de descrição em português, por exemplo `feat: adiciona validação de sobreposição de horários`. Corpo só quando há coautoria, com o trailer `Co-authored-by`. PRs pequenas, uma mudança por branch. | Commits grandes direto na `main` | histórico do Git |
 | 28 | Clean Code | Nomes que revelam a intenção, métodos curtos com uma responsabilidade, sem retornar `null`, princípios SOLID e a Regra do Escoteiro em cada PR | Sem padrão definido de código | revisão de PR |
@@ -125,7 +125,7 @@ subir e testar com curl no /actuator/health.
 - **O que a IA devolveu:** Dockerfile em dois estágios, docker-compose.yml com `db` e `api`, `.env.example` com placeholders e `application.properties` lendo a conexão de variáveis de ambiente.
 - **O que mudei ou rejeitei, e por quê:** [PREENCHER]
 - **Verificação feita:** leitura linha a linha; tags `postgres:16`, `eclipse-temurin:21-jdk` e `eclipse-temurin:21-jre` conferidas no Docker Hub [CONFIRMAR]; `docker compose up --build` com o banco saudável e `curl http://localhost:8080/actuator/health` respondendo `UP`.
-- **Onde ficou:** `Dockerfile`, `docker-compose.yml`, `.env.example`, `.dockerignore` e `src/main/resources/application.properties`, commit 3ab1fae.
+- **Onde ficou:** `Dockerfile`, `docker-compose.yml`, `.env.example`, `.dockerignore` e `src/main/resources/application.properties`, commit 7dd835c.
 
 ### Prompt 2: workflow do GitHub Actions
 
@@ -210,7 +210,7 @@ frase por regra explicando o risco que ela evita.
 - **O que a IA devolveu:** `CompromissoTest` com 18 testes em AAA. API proposta: `Compromisso.criar(titulo, descricao, inicio, fim)`, `cancelar()`, getters e `getDescricao()` como `Optional<String>`; exceções `TituloObrigatorioExcecao`, `HorarioObrigatorioExcecao`, `FimNaoPosteriorAoInicioExcecao` e `CompromissoJaCanceladoExcecao`, todas filhas de `ExcecaoDeDominio`. Casos de borda além dos pedidos: título nulo, título só com tabulação e quebra de linha, início ou fim nulos, descrição ausente, fim 1 nanossegundo depois do início (fronteira do `<` contra `<=`), ids diferentes em dois compromissos e status mantido como `CANCELADO` após o segundo cancelamento rejeitado.
 - **O que mudei ou rejeitei, e por quê:** [PREENCHER]
 - **Verificação feita:** os testes não compilavam, e todos os erros eram `cannot find symbol` das classes do domínio que ainda não existiam (nenhum erro de digitação ou de import); valores esperados conferidos como literais; Checkstyle limpo.
-- **Onde ficou:** `src/test/java/com/agenda/agenda_api/dominio/CompromissoTest.java`, commit fa5d500.
+- **Onde ficou:** `src/test/java/com/agenda/agenda_api/dominio/CompromissoTest.java`, commit caee7c2.
 
 ### Prompt 5: entidade Compromisso e exceções de domínio (Green)
 
@@ -222,7 +222,7 @@ frase por regra explicando o risco que ela evita.
 - **O que a IA devolveu:** `Compromisso` com construtor privado e fábrica `criar`, que valida título (`null` ou em branco), horários nulos e fim posterior ao início com `isAfter`; `cancelar()` rejeita o segundo cancelamento. `StatusCompromisso`, a classe abstrata `ExcecaoDeDominio` (filha de `RuntimeException`) e as quatro exceções com a mensagem fixa. Nenhum teste foi apontado como errado e nenhum teste foi alterado.
 - **O que mudei ou rejeitei, e por quê:** [PREENCHER]
 - **Verificação feita:** 18 testes verdes; `grep -rE "springframework|jakarta"` no pacote `dominio` sem resultados; Checkstyle limpo; alteração proposital do código (ver seção 6).
-- **Onde ficou:** `src/main/java/com/agenda/agenda_api/dominio/`, commit f261bdd.
+- **Onde ficou:** `src/main/java/com/agenda/agenda_api/dominio/`, commit a9f797f.
 
 ### Prompt 6: cobertura mínima com JaCoCo
 
@@ -234,7 +234,38 @@ frase por regra explicando o risco que ela evita.
 - **O que a IA devolveu:** `jacoco-maven-plugin` 0.8.16 (a versão mais recente no Maven Central, de 26/10/2026) com `prepare-agent`, `report` e `check` na fase `verify`; regra `BUNDLE` com `LINE` e `BRANCH` em `COVEREDRATIO` mínimo de 0.70. Relatório em `target/site/jacoco/index.html`.
 - **O que mudei ou rejeitei, e por quê:** [PREENCHER]
 - **Verificação feita:** `./mvnw verify` com Postgres 16 local (mesmas variáveis do CI) passou com 95,7% de linhas (45/47) e 100% de branches (12/12); as 2 linhas sem cobertura são do `main` de `AgendaApiApplication`. Com o mínimo trocado para 0.99 de propósito, o build falhou em `cobertura-minima` ("Coverage checks have not been met"), e o valor voltou para 0.70.
-- **Onde ficou:** `pom.xml`, commit ca1500a.
+- **Onde ficou:** `pom.xml`, commit c3a4eae.
+
+### Prompt 7: etapas restantes delegadas ao agente (refactor, persistência, casos de uso, API, observabilidade, desempenho e documentação)
+
+- **Data:** 10/11
+- **Quem usou:** Laís
+- **PRs:** [#4](https://github.com/laiscoutinho/agenda-api/pull/4), [#5](https://github.com/laiscoutinho/agenda-api/pull/5), [#6](https://github.com/laiscoutinho/agenda-api/pull/6), [#7](https://github.com/laiscoutinho/agenda-api/pull/7), [#8](https://github.com/laiscoutinho/agenda-api/pull/8) e [#9](https://github.com/laiscoutinho/agenda-api/pull/9) (documentação); o refactor entrou na [#3](https://github.com/laiscoutinho/agenda-api/pull/3)
+- **Objetivo:** fazer as etapas 3 (refactor) a 9 do [docs/etapas.md](etapas.md) sem precisar aprovar cada passo.
+- **Prompt:** texto exatamente como foi enviado em [docs/prompts/07-etapas-restantes.md](prompts/07-etapas-restantes.md). **Diferente dos prompts 1 a 6:** foi uma delegação ampla a um agente (Claude Code), que lê e escreve arquivos, roda comandos, testes e o Docker, faz commit, push e abre PRs. Não segue a estrutura Papel, Contexto, Tarefa, Restrições, Formato, nem a regra de uma mudança por prompt (seção 2). Por isso a revisão humana de cada PR é ainda mais importante aqui.
+- **O que a IA devolveu:** uma branch por etapa, empilhadas, com TDD onde havia regra nova (teste primeiro, depois a implementação):
+  - **Refactor** (`f03a451`, na #3): `exigirQueNaoEstejaCancelado` extraído e as validações do `Compromisso` agrupadas em `validarDados`, sem mudar teste.
+  - **Persistência** (#4: `dde68d6`, `3a2a03a`, `e865d52`, `5c94caa`): `Compromisso.reconstituir`, migração com *exclusion constraint* do Postgres contra sobreposição de ativos, entidade JPA separada, mapeador e adaptador que traduz o SQLState `23P01` em `ConflitoDeHorarioExcecao`.
+  - **Casos de uso** (#5: `ddc3cfa`, `7e318a8`): `ServicoDeCompromissos` em Java puro, testado com repositório em memória; `Compromisso.atualizar` e `sobrepoe`.
+  - **API web** (#6: `b92bcf8`, `77145de`): controlador, DTOs, tratador de erros e `FluxoDeCompromissosIntegracaoTest` com Postgres real.
+  - **Observabilidade** (#7: `335dcf2`, `5a9a370`): logs ECS em JSON, `FiltroDeIdDaRequisicao` (`X-Request-Id` e MDC), histograma de `http.server.requests` com balde de 300 ms.
+  - **Desempenho** (#8: `c2fd76f`, `d270ecd`, `31b8c31`): `tests/k6/smoke.js`, `docs/desempenho.md` e a correção do build da imagem Docker.
+  - **Documentação**: ADR 0001, `docs/openapi.yaml` com Spectral no CI, `CONTRIBUTORS.md`, README, este registro e o `docs/etapas.md`.
+- **Problemas que o agente encontrou e corrigiu no caminho:**
+  - O `docker compose up --build` estava quebrado desde a PR #2: o Checkstyle roda na fase `validate`, e a pasta `config/` não é copiada para a imagem. Só apareceu ao subir o Compose para o k6. Correção: `-Dcheckstyle.skip` no build da imagem, já que o lint roda no CI.
+  - A violação da *exclusion constraint* não chegava como `ConstraintViolationException` do Hibernate com o nome da constraint; o adaptador passou a procurar o SQLState `23P01` na cadeia de causas.
+  - Na rodada 2 do k6, os 409 da preparação (compromissos que já existiam) entraram como falha em `http_req_failed`; o script passou a marcar o 409 da preparação como esperado.
+  - Linhas acima de 120 caracteres barradas pelo Checkstyle em testes e no tratador de erros.
+- **O que mudei ou rejeitei, e por quê:** [PREENCHER]
+- **Verificação feita:**
+  - `./mvnw verify` com Postgres 16 local, as mesmas variáveis do CI: 73 testes verdes, 98,0% das linhas e 92,1% dos branches; Checkstyle limpo.
+  - Mutantes na regra de sobreposição (ver seção 6).
+  - `grep -rE "springframework|jakarta"` em `dominio` e `aplicacao`: nada.
+  - Log do `verify` conferido: linha `WARN` em JSON com o campo `idDaRequisicao`.
+  - `docker compose up --build` e `curl /actuator/health` com `UP`; k6 rodado de verdade três vezes (números em [desempenho](desempenho.md)).
+  - `spectral lint docs/openapi.yaml --fail-severity=warn` (Spectral 6.17.0) sem avisos; o OpenAPI foi escrito a partir do controlador, dos DTOs e do tratador de erros, e os códigos e mensagens de exemplo são os mesmos verificados no teste de integração.
+  - [PREENCHER: o que eu conferi pessoalmente, por exemplo leitura de cada PR e rodar o fluxo com `curl`]
+- **Onde ficou:** ver os commits acima e as PRs #4 a #8.
 
 Modelo de entrada:
 
@@ -269,13 +300,19 @@ Formato:
   - validação do título apagada: 5 testes falharam (título vazio, só espaços, só tabulação e quebra de linha, nulo, e a herança de `ExcecaoDeDominio`);
   - checagem de "já cancelado" apagada do `cancelar()`: 1 teste falhou, `cancelarDuasVezesERejeitado`.
   Com o código original, os 18 testes voltaram a passar.
+- Suíte dos casos de uso validada do mesmo jeito (`Compromisso.sobrepoe` e `ServicoDeCompromissos`, 10/11, prompt 7):
+  - borda tratada como conflito (comparação estrita trocada por não estrita em `sobrepoe`, o equivalente a `<` por `<=`): 4 testes falharam;
+  - edição sem ignorar o próprio compromisso na checagem de sobreposição: 2 testes falharam;
+  - compromisso cancelado passou a poder ser editado: 2 testes falharam.
+  Com o código original, todos voltaram a passar.
 - Checagem de testes tautológicos: em `CompromissoTest`, todo valor esperado é literal (textos, `Instant.parse("...")` e constantes do enum), e nenhum é calculado pela lógica da entidade. As mensagens das exceções estão escritas por extenso no teste, em vez de lidas da própria classe. A única comparação que não usa literal é a de ids diferentes, que compara dois valores gerados, sem prever o valor. [PREENCHER: confirme que você conferiu e se rejeitou algum teste]
 - Checklist do revisor humano em cada PR: o autor explica o código linha a linha? A complexidade é adequada? Segue os padrões do projeto? Algum trecho parece copiado de outro lugar?
 
 ## 7. Limitações e riscos reconhecidos
 
 - A IA pode produzir código convincente porém incorreto, inventar métodos ou dependências, e gerar testes que passam sempre.
-- A IA não executa o código que escreve. A verificação é nossa.
+- A IA de chat não executa o código que escreve; a verificação é nossa. No prompt 7, o agente executou testes, Docker e k6, mas o resultado que ele relata também precisa ser conferido por nós (rodar de novo, ler o código), e não aceito só porque o agente disse.
+- Delegar várias etapas de uma vez (prompt 7) gera muito código em pouco tempo. O risco é entrar código que nenhuma de nós sabe explicar; por isso cada PR passa pela revisão linha a linha antes do merge.
 - A responsabilidade técnica pelo que está no repositório é da equipe.
 
 ## 8. Referências cruzadas
