@@ -2,6 +2,8 @@ package com.agenda.agenda_api.web;
 
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -23,6 +25,8 @@ import com.agenda.agenda_api.dominio.ExcecaoDeDominio;
  */
 @RestControllerAdvice
 class TratadorDeErros {
+
+	private static final Logger LOG = LoggerFactory.getLogger(TratadorDeErros.class);
 
 	@ExceptionHandler(CompromissoNaoEncontradoExcecao.class)
 	ResponseEntity<ErroResposta> naoEncontrado(CompromissoNaoEncontradoExcecao erro) {
@@ -69,6 +73,8 @@ class TratadorDeErros {
 	}
 
 	private static ResponseEntity<ErroResposta> responder(HttpStatus status, String erro, String mensagem) {
+		// Requisição recusada é comportamento esperado, não falha do sistema: nível WARN.
+		LOG.warn("Requisição recusada com {} {}: {}", status.value(), erro, mensagem);
 		return ResponseEntity.status(status).body(new ErroResposta(erro, mensagem));
 	}
 }
