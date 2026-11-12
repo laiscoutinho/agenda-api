@@ -1,0 +1,304 @@
+openapi: 3.1.0
+info:
+  title: Agenda API
+  version: 0.1.0
+  summary: Agenda de compromissos sem sobreposição de horários.
+  description: |
+    API REST de domínio único para gerenciar compromissos de uma agenda.
+
+    - Datas e horas em ISO 8601, em UTC (por exemplo `2026-11-10T14:00:00Z`).
+    - Não pode haver dois compromissos **ativos** com horários sobrepostos. O intervalo é
+      semiaberto: um compromisso que termina às 11:00 não conflita com outro que começa às 11:00.
+    - Não existe exclusão: cancelar muda o status para `CANCELADO`, e o horário fica livre.
+    - Sem autenticação: a API é para rodar só localmente (ver README).
+  contact:
+    name: Laís Coutinho e Rosana Celine
+    url: https://github.com/laiscoutinho/agenda-api
+  license:
+    name: Uso acadêmico
+    identifier: LicenseRef-uso-academico
+servers:
+  - url: http://localhost:8080
+    description: Ambiente local (docker compose up)
+tags:
+  - name: Compromissos
+    description: Fluxo principal da agenda.
+
+paths:
+  /compromissos:
+    post:
+      tags: [Compromissos]
+      operationId: criarCompromisso
+      summary: Cria um compromisso
+      description: Cria um compromisso com status `ATIVO`, desde que não sobreponha outro compromisso ativo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntradaDeCompromisso'
+            example:
+              titulo: Dentista
+              descricao: Levar os exames
+              inicio: '2026-11-10T14:00:00Z'
+              fim: '2026-11-10T15:00:00Z'
+      responses:
+        '201':
+          description: Compromisso criado.
+          headers:
+            Location:
+              description: Caminho do compromisso criado.
+              schema:
+                type: string
+                example: /compromissos/3f8e2a52-6a1c-4a77-9a55-0c7d2b8f4e10
+            X-Request-Id:
+              $ref: '#/components/headers/IdDaRequisicao'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compromisso'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '409':
+          $ref: '#/components/responses/ConflitoDeHorario'
+    get:
+      tags: [Compromissos]
+      operationId: listarCompromissos
+      summary: Lista compromissos
+      description: |
+        Lista todos os compromissos, ativos e cancelados, ordenados pelo início.
+        Com `data`, traz só os que ocorrem em algum momento daquele dia (UTC).
+      parameters:
+        - name: data
+          in: query
+          required: false
+          description: Dia no formato AAAA-MM-DD, em UTC.
+          schema:
+            type: string
+            format: date
+            example: '2026-11-10'
+      responses:
+        '200':
+          description: Lista de compromissos, possivelmente vazia.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/IdDaRequisicao'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Compromisso'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+
+  /compromissos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdDoCompromisso'
+    get:
+      tags: [Compromissos]
+      operationId: buscarCompromisso
+      summary: Consulta um compromisso
+      description: Devolve o compromisso com esse id, ativo ou cancelado.
+      responses:
+        '200':
+          description: Compromisso encontrado.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/IdDaRequisicao'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compromisso'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+    put:
+      tags: [Compromissos]
+      operationId: atualizarCompromisso
+      summary: Atualiza um compromisso
+      description: |
+        Substitui título, descrição e horários. A sobreposição é revalidada, ignorando o próprio
+        compromisso. Uma descrição omitida fica vazia. Compromisso cancelado não pode ser editado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntradaDeCompromisso'
+      responses:
+        '200':
+          description: Compromisso atualizado.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/IdDaRequisicao'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compromisso'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/ConflitoOuCancelado'
+
+  /compromissos/{id}/cancelar:
+    parameters:
+      - $ref: '#/components/parameters/IdDoCompromisso'
+    patch:
+      tags: [Compromissos]
+      operationId: cancelarCompromisso
+      summary: Cancela um compromisso
+      description: Muda o status para `CANCELADO`. Cancelar de novo responde 409.
+      responses:
+        '200':
+          description: Compromisso cancelado.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/IdDaRequisicao'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compromisso'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/JaCancelado'
+
+components:
+  parameters:
+    IdDoCompromisso:
+      name: id
+      in: path
+      required: true
+      description: Id do compromisso.
+      schema:
+        type: string
+        format: uuid
+
+  headers:
+    IdDaRequisicao:
+      description: Id da requisição, o mesmo que aparece nos logs. Se o cliente mandar um válido, ele é devolvido.
+      schema:
+        type: string
+        example: 7c1b5c8e-2f0e-4b8b-9a51-3a6d2d1f0c44
+
+  schemas:
+    EntradaDeCompromisso:
+      type: object
+      required: [titulo, inicio, fim]
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Obrigatório e não pode ser só espaços.
+        descricao:
+          type: [string, 'null']
+          maxLength: 2000
+        inicio:
+          type: string
+          format: date-time
+        fim:
+          type: string
+          format: date-time
+          description: Deve ser posterior ao início.
+
+    Compromisso:
+      type: object
+      required: [id, titulo, inicio, fim, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        titulo:
+          type: string
+        descricao:
+          type: [string, 'null']
+        inicio:
+          type: string
+          format: date-time
+        fim:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [ATIVO, CANCELADO]
+      example:
+        id: 3f8e2a52-6a1c-4a77-9a55-0c7d2b8f4e10
+        titulo: Dentista
+        descricao: Levar os exames
+        inicio: '2026-11-10T14:00:00Z'
+        fim: '2026-11-10T15:00:00Z'
+        status: ATIVO
+
+    Erro:
+      type: object
+      required: [erro, mensagem]
+      properties:
+        erro:
+          type: string
+          enum: [DADOS_INVALIDOS, NAO_ENCONTRADO, CONFLITO_DE_HORARIO, COMPROMISSO_CANCELADO]
+          description: Código estável, para o cliente tratar o erro.
+        mensagem:
+          type: string
+          description: Texto para pessoas, em português.
+
+  responses:
+    DadosInvalidos:
+      description: Dados inválidos (campo obrigatório ausente, fim antes do início, JSON ou data mal formados, id que não é UUID).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            erro: DADOS_INVALIDOS
+            mensagem: O fim do compromisso deve ser posterior ao início.
+    NaoEncontrado:
+      description: Não existe compromisso com esse id.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            erro: NAO_ENCONTRADO
+            mensagem: Compromisso não encontrado.
+    ConflitoDeHorario:
+      description: O horário se sobrepõe ao de outro compromisso ativo.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            erro: CONFLITO_DE_HORARIO
+            mensagem: Já existe um compromisso ativo nesse horário.
+    JaCancelado:
+      description: O compromisso já está cancelado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            erro: COMPROMISSO_CANCELADO
+            mensagem: O compromisso já está cancelado.
+    ConflitoOuCancelado:
+      description: Conflito de horário com outro compromisso ativo, ou tentativa de editar um compromisso cancelado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          examples:
+            conflito:
+              summary: Sobreposição de horário
+              value:
+                erro: CONFLITO_DE_HORARIO
+                mensagem: Já existe um compromisso ativo nesse horário.
+            cancelado:
+              summary: Compromisso cancelado
+              value:
+                erro: COMPROMISSO_CANCELADO
+                mensagem: Um compromisso cancelado não pode ser editado.
