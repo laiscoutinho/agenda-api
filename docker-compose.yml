@@ -1,0 +1,39 @@
+# Ambiente local: banco PostgreSQL + API.
+# As credenciais vêm do arquivo .env (copie de .env.example). Nenhum valor
+# real fica escrito aqui; se uma variável faltar, o compose para com erro.
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB no .env}
+      POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # Sem "ports": o banco só é acessível pela rede interna do compose.
+    healthcheck:
+      # $$ faz o compose passar a variável literal para o shell do contêiner.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        # A API só sobe depois que o healthcheck do banco passar.
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "8080:8080"
+
+volumes:
+  db-data:
