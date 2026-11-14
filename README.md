@@ -11,7 +11,7 @@ Projeto final do curso **Full Cycle**, Módulo 4. API REST de domínio único pa
 | Nome | GitHub | Parte do sistema |
 |---|---|---|
 | Laís Coutinho | [@laiscoutinho](https://github.com/laiscoutinho) | Domínio, casos de uso, persistência, API web, observabilidade e desempenho |
-| Rosana Celine | [@RosanaCeline](https://github.com/RosanaCeline) | A DEFINIR (conforme CONTRIBUTORS.md) |
+| Rosana Celine | [@RosanaCeline](https://github.com/RosanaCeline) | Coimplementação de funcionalidades, revisão técnica dos PRs, validação de qualidade e melhorias de arquitetura, testes e documentação |
 
 Detalhes de quem fez o quê em [CONTRIBUTORS.md](CONTRIBUTORS.md).
 
